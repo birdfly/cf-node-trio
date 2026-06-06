@@ -137,8 +137,15 @@ cmd_status() {
   h=$(state_get TUNNEL_DOMAIN 2>/dev/null) && \
     echo "  ✓ Named Tunnel:   $h" || echo "  ✗ Named Tunnel:   (未配)"
 
+  # 内核调优
   echo
-  echo "${C_DIM}用 'manage subscribe' 看全部分享链接, 'manage qr all' 看 QR${C_RST}"
+  echo "${C_GRN}内核 / 网络${C_RST}:"
+  if declare -f tune_status >/dev/null; then
+    tune_status
+  fi
+
+  echo
+  echo "${C_DIM}用 'subscribe' 看链接, 'qr all' 看 QR, 'tune' 应用 BBR + 调优${C_RST}"
 }
 
 # ─── port 修改 ────────────────────────────────────────────────────────

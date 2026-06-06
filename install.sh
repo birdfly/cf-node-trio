@@ -9,6 +9,7 @@ HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=lib/singbox.sh
 . "$HERE/lib/singbox.sh"
 . "$HERE/lib/manage.sh"
+. "$HERE/lib/tune.sh"
 for f in "$HERE"/lib/proto-*.sh "$HERE"/lib/ingress-*.sh; do . "$f"; done
 
 usage() {
@@ -24,6 +25,8 @@ ${C_GRN}cf-node-trio${C_RST} · 模块化 VLESS / Hysteria2 / AnyTLS 节点 + �
   bash install.sh subscribe [plain|base64] # 输出全部分享链接
   bash install.sh qr <target>              # 显示 QR (target: reality|hy2|anytls|cf-cdn|argo|tunnel|all)
   bash install.sh port <proto> <newport>   # 修改协议端口 (proto: reality|ws|hy2|anytls)
+  bash install.sh tune                     # 应用 BBR + TCP/UDP 大缓冲 + 高并发调优
+  bash install.sh untune                   # 撤销 tune
   bash install.sh bench                    # 跑 bench/speedtest.sh
   bash install.sh uninstall                # 卸载
 
@@ -40,6 +43,13 @@ EOF
 }
 
 interactive() {
+  cat <<EOF
+
+${C_BLU}==== 内核 / 网络调优 (BBR + 大缓冲 + 高并发) ====${C_RST}
+EOF
+  read -rp "现在应用? [Y/n]: " ans
+  [[ ${ans,,} != n ]] && tune_install
+
   cat <<EOF
 
 ${C_BLU}==== 协议 (sing-box 入站) ====${C_RST}
@@ -100,6 +110,8 @@ main() {
 
   case ${1:-} in
     port)        cmd_port "$2" "$3"; exit 0 ;;
+    tune)        tune_install; exit 0 ;;
+    untune)      tune_uninstall; exit 0 ;;
     uninstall)   exec bash "$HERE/uninstall.sh" ;;
   esac
 

@@ -16,6 +16,10 @@ info "清理 Hysteria2 端口跳跃 iptables 规则 …"
 . "$HERE/lib/proto-hy2.sh"
 _hy2_port_hop_cleanup 2>/dev/null || true
 
+info "撤销 tune 配置文件 (内核值需 reboot 才回滚) …"
+. "$HERE/lib/tune.sh"
+tune_uninstall 2>/dev/null || true
+
 info "清理 Caddyfile 块 (注释标记内的) …"
 if [[ -f /etc/caddy/Caddyfile ]]; then
   # 删除 "# ── cf-node-trio:" 起 直到下一个 "# ──" 或文件尾

@@ -67,8 +67,12 @@ bash install.sh subscribe                # all share links
 bash install.sh subscribe base64         # subscription URL format
 bash install.sh qr all                   # all QR codes (ANSI)
 sudo bash install.sh port hy2 8443       # change a port
+sudo bash install.sh tune                # apply BBR + big buffers + high concurrency
 sudo bash install.sh uninstall           # uninstall (moves config to backup)
 ```
+
+What `tune` does: BBR+fq, 64MB TCP buffers, UDP buffers (matters for Hy2),
+backlog 65535, nofile 1M, ... Full breakdown: [docs/tuning.md](docs/tuning.md)
 
 ## Reproduce benchmark
 
@@ -92,6 +96,7 @@ Numbers + how to read: [bench/results.md](bench/results.md)
 - [Architecture](docs/architecture.md)
 - [4 protocols compared](docs/protocols.md)
 - [3 CF ingress modes compared](docs/ingress-compare.md)
+- [Kernel / network tuning](docs/tuning.md)
 
 ## Star history
 

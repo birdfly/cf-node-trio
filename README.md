@@ -67,8 +67,12 @@ bash install.sh subscribe                # 全部分享链接
 bash install.sh subscribe base64         # 订阅链接 (机场格式)
 bash install.sh qr all                   # 全部二维码 (ANSI)
 sudo bash install.sh port hy2 8443       # 改端口
+sudo bash install.sh tune                # 应用 BBR + 大缓冲 + 高并发
 sudo bash install.sh uninstall           # 卸载,配置移到备份不直删
 ```
+
+`tune` 做了什么: BBR+fq, TCP 缓冲 64MB, UDP 缓冲 (Hy2 关键), backlog 65535, nofile 1M, ...
+详细每条 + 原理: [docs/tuning.md](docs/tuning.md)
 
 ## 测速复现
 
@@ -92,6 +96,7 @@ bash bench/speedtest.sh \
 - [架构](docs/architecture.md)
 - [4 个协议的差别](docs/protocols.md)
 - [3 个 CF 入口的差别](docs/ingress-compare.md)
+- [内核 / 网络调优](docs/tuning.md)
 
 ## 热度
 
