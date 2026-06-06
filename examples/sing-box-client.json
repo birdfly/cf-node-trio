@@ -1,0 +1,69 @@
+{
+  "_comment": "示例: sing-box 客户端配置, 把 4 个协议都加进 outbounds, 通过 selector 切换",
+  "log": { "level": "info" },
+  "dns": {
+    "servers": [
+      { "tag": "remote", "address": "https://1.1.1.1/dns-query", "detour": "select" },
+      { "tag": "local",  "address": "223.5.5.5", "detour": "direct" }
+    ],
+    "rules": [
+      { "rule_set": ["geosite-cn"], "server": "local" }
+    ]
+  },
+  "inbounds": [
+    { "type": "mixed", "tag": "local-mixed", "listen": "127.0.0.1", "listen_port": 7890 }
+  ],
+  "outbounds": [
+    {
+      "type": "selector", "tag": "select",
+      "outbounds": ["reality", "ws-cdn", "ws-argo", "ws-tunnel", "hy2", "anytls", "direct"]
+    },
+    {
+      "type": "vless", "tag": "reality",
+      "server": "1.2.3.4", "server_port": 8443,
+      "uuid": "REPLACE_UUID", "flow": "xtls-rprx-vision",
+      "tls": { "enabled": true, "server_name": "www.cloudflare.com",
+               "reality": { "enabled": true, "public_key": "REPLACE_PBK", "short_id": "REPLACE_SID" } }
+    },
+    {
+      "type": "vless", "tag": "ws-cdn",
+      "server": "cdn.example.com", "server_port": 443,
+      "uuid": "REPLACE_UUID",
+      "tls": { "enabled": true, "server_name": "cdn.example.com" },
+      "transport": { "type": "ws", "path": "REPLACE_PATH", "headers": { "Host": "cdn.example.com" } }
+    },
+    {
+      "type": "vless", "tag": "ws-argo",
+      "server": "xxx.trycloudflare.com", "server_port": 443,
+      "uuid": "REPLACE_UUID",
+      "tls": { "enabled": true, "server_name": "xxx.trycloudflare.com" },
+      "transport": { "type": "ws", "path": "REPLACE_PATH" }
+    },
+    {
+      "type": "vless", "tag": "ws-tunnel",
+      "server": "node.example.com", "server_port": 443,
+      "uuid": "REPLACE_UUID",
+      "tls": { "enabled": true, "server_name": "node.example.com" },
+      "transport": { "type": "ws", "path": "REPLACE_PATH" }
+    },
+    {
+      "type": "hysteria2", "tag": "hy2",
+      "server": "1.2.3.4", "server_port": 32143,
+      "password": "REPLACE_PWD",
+      "tls": { "enabled": true, "insecure": true, "server_name": "hy2.local" }
+    },
+    {
+      "type": "anytls", "tag": "anytls",
+      "server": "1.2.3.4", "server_port": 8445,
+      "password": "REPLACE_PWD",
+      "tls": { "enabled": true, "insecure": true, "server_name": "anytls.local" }
+    },
+    { "type": "direct", "tag": "direct" }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "rules": [
+      { "rule_set": ["geosite-cn", "geoip-cn"], "outbound": "direct" }
+    ]
+  }
+}

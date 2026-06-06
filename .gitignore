@@ -1,0 +1,17 @@
+*.swp
+*.swo
+*.bak
+*.bak-*
+*~
+.DS_Store
+
+# Anything that contains real keys / IPs
+*.env
+*.key
+*.pem
+credentials*
+secrets/
+
+# Test artifacts
+/tmp/
+*.log

@@ -1,0 +1,82 @@
+# Mihomo / Clash Meta 客户端示例 — 把 4 协议 + 3 入口都摆出来
+# 占位符: 改成你 install.sh 输出的真实值
+
+proxies:
+  # ─── 直连协议 ─────────────────────────────────────────────────────────
+  - name: "Reality 直连"
+    type: vless
+    server: 1.2.3.4
+    port: 8443
+    uuid: REPLACE_UUID
+    network: tcp
+    tls: true
+    flow: xtls-rprx-vision
+    servername: www.cloudflare.com
+    reality-opts:
+      public-key: REPLACE_PBK
+      short-id: REPLACE_SID
+    client-fingerprint: chrome
+
+  - name: "Hysteria2 直连"
+    type: hysteria2
+    server: 1.2.3.4
+    port: 32143
+    password: REPLACE_PWD
+    sni: hy2.local
+    skip-cert-verify: true
+
+  - name: "AnyTLS 直连"
+    type: anytls
+    server: 1.2.3.4
+    port: 8445
+    password: REPLACE_PWD
+    sni: anytls.local
+    skip-cert-verify: true
+
+  # ─── VLESS-WS 经过 3 种 CF 入口 ───────────────────────────────────────
+  - name: "CF CDN 反代"
+    type: vless
+    server: cdn.example.com
+    port: 443
+    uuid: REPLACE_UUID
+    tls: true
+    network: ws
+    servername: cdn.example.com
+    ws-opts:
+      path: "REPLACE_PATH"
+      headers: { Host: cdn.example.com }
+
+  - name: "Argo 临时隧道"
+    type: vless
+    server: xxx.trycloudflare.com
+    port: 443
+    uuid: REPLACE_UUID
+    tls: true
+    network: ws
+    servername: xxx.trycloudflare.com
+    ws-opts: { path: "REPLACE_PATH" }
+
+  - name: "Named Tunnel"
+    type: vless
+    server: node.example.com
+    port: 443
+    uuid: REPLACE_UUID
+    tls: true
+    network: ws
+    servername: node.example.com
+    ws-opts: { path: "REPLACE_PATH" }
+
+proxy-groups:
+  - name: "节点切换"
+    type: select
+    proxies: ["Reality 直连", "Hysteria2 直连", "AnyTLS 直连",
+              "CF CDN 反代", "Argo 临时隧道", "Named Tunnel"]
+  - name: "AUTO"
+    type: url-test
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    proxies: ["Reality 直连", "CF CDN 反代", "Named Tunnel"]
+
+rules:
+  - GEOIP,CN,DIRECT
+  - MATCH,节点切换
