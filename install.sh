@@ -8,6 +8,7 @@ HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 . "$HERE/lib/common.sh"
 # shellcheck source=lib/singbox.sh
 . "$HERE/lib/singbox.sh"
+. "$HERE/lib/manage.sh"
 for f in "$HERE"/lib/proto-*.sh "$HERE"/lib/ingress-*.sh; do . "$f"; done
 
 usage() {
@@ -18,11 +19,23 @@ ${C_GRN}cf-node-trio${C_RST} · 模块化 VLESS / Hysteria2 / AnyTLS 节点 + �
   bash install.sh                          # 交互菜单
   bash install.sh --proto reality          # 单独装某协议
   bash install.sh --proto ws --ingress cf-cdn --domain n.example.com
-  bash install.sh --bench                  # 跑 bench/speedtest.sh
-  bash install.sh --uninstall
+  bash install.sh --proto hy2              # 含端口跳跃: 加 HY2_PORT_RANGE=20000:40000
+  bash install.sh status                   # 一览当前部署
+  bash install.sh subscribe [plain|base64] # 输出全部分享链接
+  bash install.sh qr <target>              # 显示 QR (target: reality|hy2|anytls|cf-cdn|argo|tunnel|all)
+  bash install.sh port <proto> <newport>   # 修改协议端口 (proto: reality|ws|hy2|anytls)
+  bash install.sh bench                    # 跑 bench/speedtest.sh
+  bash install.sh uninstall                # 卸载
 
 协议 (--proto):  reality | ws | hy2 | anytls | all
 接入 (--ingress): cf-cdn | argo | tunnel
+
+环境变量 (可选):
+  REALITY_PORT, REALITY_UUID, REALITY_SNI
+  WS_PORT, WS_UUID, WS_PATH
+  HY2_PORT, HY2_PASSWORD, HY2_PORT_RANGE (e.g. 20000:40000), HY2_OBFS
+  ANYTLS_PORT, ANYTLS_PASSWORD
+  CF_CDN_DOMAIN, TUNNEL_DOMAIN, TUNNEL_NAME
 EOF
 }
 
@@ -71,10 +84,24 @@ EOF
 }
 
 main() {
+  # 子命令分发 (不需要 root 的: status / subscribe / qr)
+  case ${1:-} in
+    status)    detect_os 2>/dev/null; cmd_status; exit 0 ;;
+    subscribe) cmd_subscribe "${2:-plain}"; exit 0 ;;
+    qr)        cmd_qr "${2:-all}"; exit 0 ;;
+    bench)     shift; exec bash "$HERE/bench/speedtest.sh" "$@" ;;
+    -h|--help) usage; exit 0 ;;
+  esac
+
   require_root
   detect_os
   ensure_cmd jq
   ensure_cmd curl
+
+  case ${1:-} in
+    port)        cmd_port "$2" "$3"; exit 0 ;;
+    uninstall)   exec bash "$HERE/uninstall.sh" ;;
+  esac
 
   if [[ $# -eq 0 ]]; then interactive; exit 0; fi
 

@@ -96,6 +96,8 @@ sudo bash install.sh \
 
 一次真实测量 (Mac 客户端 / 家庭宽带 / 中国大陆, VPS 在日本东京):
 
+![benchmark](bench/benchmark.png)
+
 | 入口模式 | ping (中位) | TLS appconnect |
 |---|---:|---:|
 | **CF CDN 反代** | 0.9 ms | 61 ms |
@@ -145,6 +147,19 @@ PR 欢迎. 主要欢迎:
 - 不同地理位置的 `bench/` 实测数据 (附 commit 写 region/ISP)
 
 请保持 `set -euo pipefail`, 每个 lib 文件可以独立 source, 不依赖 `install.sh` 的菜单状态.
+
+## 项目热度
+
+<a href="https://star-history.com/#birdfly/cf-node-trio&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"
+            srcset="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)"
+            srcset="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date" />
+    <img alt="Star History Chart"
+         src="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date" />
+  </picture>
+</a>
 
 ## 协议
 

@@ -6,11 +6,15 @@ HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 require_root
 
 info "停止 systemd 服务 …"
-for svc in sing-box cf-argo cf-named-tunnel; do
+for svc in sing-box cf-argo cf-named-tunnel cf-node-trio-iptables; do
   systemctl disable --now "$svc" 2>/dev/null || true
   rm -f "/etc/systemd/system/${svc}.service"
 done
 systemctl daemon-reload
+
+info "清理 Hysteria2 端口跳跃 iptables 规则 …"
+. "$HERE/lib/proto-hy2.sh"
+_hy2_port_hop_cleanup 2>/dev/null || true
 
 info "清理 Caddyfile 块 (注释标记内的) …"
 if [[ -f /etc/caddy/Caddyfile ]]; then

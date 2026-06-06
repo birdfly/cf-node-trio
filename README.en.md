@@ -98,6 +98,8 @@ Full table (throughput / failover / ToS risk): [`docs/ingress-compare.md`](docs/
 
 A single live measurement (Mac client / home broadband / mainland CN, VPS in Tokyo JP):
 
+![benchmark](bench/benchmark.png)
+
 | Ingress | ping (median) | TLS appconnect |
 |---|---:|---:|
 | **CF CDN reverse proxy** | 0.9 ms | 61 ms |
@@ -147,6 +149,19 @@ PRs welcome. Especially:
 - `bench/` data from other regions (please note region/ISP in your commit)
 
 Keep `set -euo pipefail`. Each `lib/*.sh` should be source-able independently.
+
+## Star history
+
+<a href="https://star-history.com/#birdfly/cf-node-trio&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"
+            srcset="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)"
+            srcset="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date" />
+    <img alt="Star History Chart"
+         src="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date" />
+  </picture>
+</a>
 
 ## License
 
