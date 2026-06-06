@@ -1,44 +1,20 @@
 # cf-node-trio
 
-> One script that sets up **4 proxy protocols** + **3 Cloudflare ingress modes**
-> on a single VPS, so you can actually compare them side-by-side.
+> Set up 4 proxy protocols + 3 Cloudflare ingress modes on one VPS. Same backend, client picks.
 >
-> English · [中文](README.md)
+> [中文](README.md)
 
+![benchmark](bench/benchmark.png)
+
+Tested from my home network, VPS in Tokyo. How to read this: [bench/results.md](bench/results.md)
+
+## Install
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/birdfly/cf-node-trio/main/install.sh)
 ```
-        Protocol layer (sing-box)              Ingress layer (CF / direct)
-        ────────────────────────               ───────────────────────────
-        ❶ VLESS-Reality       ──┐
-        ❷ VLESS-WS            ──┤              ❶ CF CDN reverse proxy (Caddy)
-        ❸ Hysteria2 (QUIC)    ──┼─ any combo ─→ ❷ CF Argo Quick Tunnel
-        ❹ AnyTLS              ──┘              ❸ CF Named Tunnel
-                                               ❹ Direct (bypass CF)
-```
 
-## What this is
-
-Most "set up a node" tutorials are one-shot: install sing-box, run cloudflared, done.
-In reality the choice space is much wider: 4 common protocols × 3 CF ingress modes = 12 combos,
-each with different latency, throughput, stealth, and deployment cost.
-
-This repo does three things:
-
-1. **One `install.sh`** that wires up any subset of those 12 combos with no conflicts
-2. **A `bench/speedtest.sh`** for on-site latency / throughput measurements
-3. **Docs** that actually explain the real differences between the three CF ingress modes — not just rephrased marketing
-
-If you just want a working node, run `install.sh` with defaults.
-If you want to understand *why* Argo needs no domain, why CDN reverse proxy needs orange-cloud, and why Named Tunnel needs `cloudflared login`, read `docs/`.
-
-## What it's not
-
-- ❌ **Not a paid-VPN backend** — no user mgmt, no traffic accounting, no panel
-- ❌ **Not production-grade** — no monitoring, alerting, backup/restore
-- ❌ **Not a way around any law** — comply with your jurisdiction, this is for technical research
-
-## Quick start
-
-VPS: Ubuntu 22+/24+ or Debian 12+ (others likely work), root, public IPv4.
+or:
 
 ```bash
 git clone https://github.com/birdfly/cf-node-trio
@@ -46,123 +22,86 @@ cd cf-node-trio
 sudo bash install.sh
 ```
 
-Follow the menu (protocol → ingress). At the end you'll get a `vless://...` link
-you can paste into Mihomo / sing-box / NekoBox / v2rayN.
+Two menu prompts. It spits out a `vless://...` at the end.
 
-One-liner (Argo, no domain needed):
+## Protocols
 
-```bash
-sudo bash install.sh --proto ws --ingress argo
-```
-
-With a domain on CF CDN:
+`reality` · `ws` · `hy2` · `anytls`
 
 ```bash
-sudo bash install.sh \
-  --proto ws \
-  --ingress cf-cdn \
-  --domain cdn.your-domain.com
+sudo bash install.sh --proto reality
+sudo bash install.sh --proto hy2                          # plain
+sudo HY2_PORT_RANGE=20000:40000 \
+     bash install.sh --proto hy2                          # port hopping
+sudo HY2_PORT_RANGE=20000:40000 \
+     HY2_OBFS=$(openssl rand -hex 8) \
+     bash install.sh --proto hy2                          # hop + obfs
+sudo bash install.sh --proto all                          # all four
 ```
 
-## How the protocols differ
+## CF ingress (uses ws)
 
-Full details in [`docs/protocols.md`](docs/protocols.md). One-liners:
+`cf-cdn` · `argo` · `tunnel`
 
-| Protocol | One-liner |
-|---|---|
-| VLESS-Reality | Borrows a real site's TLS cert for SNI; handshake looks like a visit to that site. Fastest direct. |
-| VLESS-WS      | Plain WS locally, TLS done by the previous hop. **All 3 CF ingresses speak this.** |
-| Hysteria2     | QUIC over UDP, BBR-like CC. Wins on lossy / mobile networks. |
-| AnyTLS        | sing-box 1.10+ TLS-mux proxy. |
+```bash
+sudo bash install.sh --proto ws --ingress argo            # no domain, quickest
+sudo bash install.sh --proto ws --ingress cf-cdn --domain cdn.example.com
+sudo bash install.sh --proto ws --ingress tunnel --domain n.example.com
+```
 
-| CF ingress | One-liner |
-|---|---|
-| **CF CDN reverse proxy** | Domain on orange-cloud, Caddy listens on 443 and reverse-proxies to local. Stable subdomain, most widely used. |
-| **Argo Quick Tunnel** | One `cloudflared tunnel --url` line. No domain, no CF account. Random subdomain, changes on restart. |
-| **Named Tunnel** | Permanent subdomain, requires a one-time `cloudflared login`. VPS opens no inbound ports. |
+One-liner:
 
-## Three CF ingress modes — comparison
+| | needs domain | needs CF account | opens 443 | stable subdomain |
+|---|---|---|---|---|
+| cf-cdn | ✓ | ✓ | ✓ | ✓ |
+| argo   | ✗ | ✗ | ✗ | ✗ |
+| tunnel | ✓ | ✓ | ✗ | ✓ |
 
-| Aspect | CDN reverse proxy | Argo Quick | Named Tunnel |
-|---|---|---|---|
-| Needs a domain | ✓ | ✗ | ✓ |
-| Needs CF account | ✓ | ✗ | ✓ |
-| VPS opens 443 | ✓ | ✗ | ✗ |
-| Stable subdomain | ✓ | ✗ | ✓ |
-| Deployment | medium | **easiest** | high |
-| Best for | long-term main | one-off / share | long-term + hide VPS |
+Full comparison: [docs/ingress-compare.md](docs/ingress-compare.md)
 
-Full table (throughput / failover / ToS risk): [`docs/ingress-compare.md`](docs/ingress-compare.md)
+## Use
 
-## Benchmark
+```bash
+sudo bash install.sh status              # what's installed
+bash install.sh subscribe                # all share links
+bash install.sh subscribe base64         # subscription URL format
+bash install.sh qr all                   # all QR codes (ANSI)
+sudo bash install.sh port hy2 8443       # change a port
+sudo bash install.sh uninstall           # uninstall (moves config to backup)
+```
 
-A single live measurement (Mac client / home broadband / mainland CN, VPS in Tokyo JP):
-
-![benchmark](bench/benchmark.png)
-
-| Ingress | ping (median) | TLS appconnect |
-|---|---:|---:|
-| **CF CDN reverse proxy** | 0.9 ms | 61 ms |
-| **Argo Quick Tunnel**    | 1.0 ms | 55 ms |
-| **Named Tunnel**         | 1.0 ms | 88 ms |
-| Direct VPS:8443 (Reality baseline) | 50.8 ms | — |
-
-**How to read**: 1ms pings just mean ICMP hits CF Edge anycast (close to the user).
-The TLS handshake still has to traverse Edge → origin VPS, hence ~55–90 ms.
-Direct is 50 ms single-trip to Tokyo, no CDN in the middle, but exposes VPS IP.
-
-Methodology + how to reproduce: [`bench/results.md`](bench/results.md)
+## Reproduce benchmark
 
 ```bash
 bash bench/speedtest.sh \
   --cf-cdn cdn.example.com \
   --argo   xxx.trycloudflare.com \
-  --tunnel node.example.com \
+  --tunnel n.example.com \
   --direct 1.2.3.4:8443
 ```
 
-## Client configs
+Numbers + how to read: [bench/results.md](bench/results.md)
 
-- sing-box: [`examples/sing-box-client.json`](examples/sing-box-client.json)
-- Mihomo / Clash Meta: [`examples/clash.yaml`](examples/clash.yaml)
+## Clients
 
-## Uninstall
+- Mihomo / Clash Meta: [examples/clash.yaml](examples/clash.yaml)
+- sing-box: [examples/sing-box-client.json](examples/sing-box-client.json)
 
-```bash
-sudo bash uninstall.sh
-```
+## Docs
 
-Stops the systemd units, strips `# ── cf-node-trio:` blocks from Caddyfile, and *moves* config dirs to `/root/cf-node-trio-uninstall-<timestamp>/` instead of deleting — so you can roll back.
-
-## Why I wrote this
-
-I run two VPSes (Japan + AWS Lightsail US) plus a ChatGPT US API proxy, a Hermes Agent, and a personal site. I've cycled through all 4 protocols × 3 ingress modes more times than I'd like, and every fresh VPS made me redo the dance. This script is what I use myself; open-sourcing in case it helps.
-
-If you also want "set it up once and keep the choice open," this is for you.
-
-## Contributing
-
-PRs welcome. Especially:
-
-- New protocols in `lib/proto-*.sh`
-- Other CDN ingresses (CDN77 / Bunny / CloudFront)
-- `bench/` data from other regions (please note region/ISP in your commit)
-
-Keep `set -euo pipefail`. Each `lib/*.sh` should be source-able independently.
+- [Architecture](docs/architecture.md)
+- [4 protocols compared](docs/protocols.md)
+- [3 CF ingress modes compared](docs/ingress-compare.md)
 
 ## Star history
 
 <a href="https://star-history.com/#birdfly/cf-node-trio&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)"
-            srcset="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)"
-            srcset="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date" />
-    <img alt="Star History Chart"
-         src="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date&theme=dark" />
+    <img alt="Star History" src="https://api.star-history.com/svg?repos=birdfly/cf-node-trio&type=Date" />
   </picture>
 </a>
 
 ## License
 
-[MIT](LICENSE) © 2026 birdfly
+[MIT](LICENSE)
