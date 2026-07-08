@@ -28,12 +28,17 @@ _link_hy2() {
 }
 
 _link_anytls() {
-  local pwd port ip
+  local pwd port domain ip
   pwd=$(state_get ANYTLS_PWD) || return 1
   port=$(state_get ANYTLS_PORT)
-  ip=$(public_ipv4)
-  printf 'anytls://%s@%s:%s?insecure=1&sni=anytls.local#anytls-direct\n' \
-    "$pwd" "$ip" "$port"
+  domain=$(state_get ANYTLS_DOMAIN 2>/dev/null || echo "")
+  if [[ -n $domain ]]; then
+    printf 'anytls://%s@%s:%s?sni=%s#anytls-direct\n' "$pwd" "$domain" "$port" "$domain"
+  else
+    ip=$(public_ipv4)
+    printf 'anytls://%s@%s:%s?insecure=1&sni=anytls.local#anytls-direct\n' \
+      "$pwd" "$ip" "$port"
+  fi
 }
 
 _link_ws_via() {

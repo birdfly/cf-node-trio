@@ -36,6 +36,9 @@ sudo HY2_PORT_RANGE=20000:40000 \
 sudo HY2_PORT_RANGE=20000:40000 \
      HY2_OBFS=$(openssl rand -hex 8) \
      bash install.sh --proto hy2                          # 端口跳跃 + 混淆
+sudo bash install.sh --proto anytls                       # 普通 (自签证书)
+sudo ANYTLS_DOMAIN=at.example.com \
+     bash install.sh --proto anytls                       # 真域名 → ACME 真证书 (需 DNS 已指向本机, :80 可达)
 sudo bash install.sh --proto all                          # 一次装齐
 ```
 
